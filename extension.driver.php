@@ -455,6 +455,7 @@
             }
 
             $url_context = $page->getContext();
+            $url_context[0] = $url_context[0] ?? null;
             if (!in_array($url_context[0], array('new', 'edit'))) {
                 return;
             }
@@ -467,7 +468,7 @@
                 $ds = $url_context[1];
                 $dsm = new DatasourceManager(Symphony::Engine());
                 $datasource = $dsm->create($ds, null, false);
-                $cache = $datasource->dsParamCACHE;
+                $cache = $datasource->dsParamCACHE ?? null;
             }
             if (is_null($cache)) {
                 $cache = 0;
