@@ -1,3 +1,5 @@
+`Note: currently not working in PHP 8.3. Max PHP version is currently 8.2.`
+
 # Cacheable Datasource
 
 Some datasources simply execute a lot of database queries. It's a fact of life, so instead of complaining, learn to deal with it ;-) You can:
