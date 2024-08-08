@@ -19,6 +19,9 @@
 		</author>
 	</authors>
 	<releases>
+		<release version="2.5.4" date="2024-08-08" min="2.7.10" max="2.x.x">
+			- PHP 8.3 fix, prevent unserialize-Error
+		</release>
 		<release version="2.5.3" date="2022-06-01" min="2.7.10" max="2.x.x">
 			- PHP8 Fixes, may require PHP7
 		</release>
