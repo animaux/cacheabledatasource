@@ -179,6 +179,73 @@
             // don't double cache any Dynamic XML or Remote datasources
             return strpos($ds, 'DynamicXMLDatasource') === false && strpos($ds, 'RemoteDatasource') === false;
         }
+        
+        
+        
+        /* 
+        Checks value to find if it was serialized.
+        Borrowed from Wordpress: 
+        https://developer.wordpress.org/reference/functions/is_serialized/#Source_File
+        */
+				public function is_serialized( $data, $strict = true ) {
+					// If it isn't a string, it isn't serialized.
+					if ( ! is_string( $data ) ) {
+						return false;
+					}
+					$data = trim( $data );
+					if ( 'N;' === $data ) {
+						return true;
+					}
+					if ( strlen( $data ) < 4 ) {
+						return false;
+					}
+					if ( ':' !== $data[1] ) {
+						return false;
+					}
+					if ( $strict ) {
+						$lastc = substr( $data, -1 );
+						if ( ';' !== $lastc && '}' !== $lastc ) {
+							return false;
+						}
+					} else {
+						$semicolon = strpos( $data, ';' );
+						$brace     = strpos( $data, '}' );
+						// Either ; or } must exist.
+						if ( false === $semicolon && false === $brace ) {
+							return false;
+						}
+						// But neither must be in the first X characters.
+						if ( false !== $semicolon && $semicolon < 3 ) {
+							return false;
+						}
+						if ( false !== $brace && $brace < 4 ) {
+							return false;
+						}
+					}
+					$token = $data[0];
+					switch ( $token ) {
+						case 's':
+							if ( $strict ) {
+								if ( '"' !== substr( $data, -2, 1 ) ) {
+									return false;
+								}
+							} elseif ( ! str_contains( $data, '"' ) ) {
+								return false;
+							}
+							// Or else fall through.
+						case 'a':
+						case 'O':
+						case 'E':
+							return (bool) preg_match( "/^{$token}:[0-9]+:/s", $data );
+						case 'b':
+						case 'i':
+						case 'd':
+							$end = $strict ? '$' : '';
+							return (bool) preg_match( "/^{$token}:[0-9.E+-]+;$end/", $data );
+					}
+					return false;
+				}
+        
 
         /**
          * `DatasourcePreCreate` delegate callback function
@@ -229,69 +296,11 @@
                 
                 // output params are a serialised array on line 1
                 // if no params are included in the datasource, the datasource xsml root is displayed f. e. `<datasource cache-age='fresh' cache-expiration="-1">` we need to check if it’s actually a serialized string
-                // https://developer.wordpress.org/reference/functions/is_serialized/#Source_File
-                function is_serialized( $data, $strict = true ) {
-									// If it isn't a string, it isn't serialized.
-									if ( ! is_string( $data ) ) {
-										return false;
-									}
-									$data = trim( $data );
-									if ( 'N;' === $data ) {
-										return true;
-									}
-									if ( strlen( $data ) < 4 ) {
-										return false;
-									}
-									if ( ':' !== $data[1] ) {
-										return false;
-									}
-									if ( $strict ) {
-										$lastc = substr( $data, -1 );
-										if ( ';' !== $lastc && '}' !== $lastc ) {
-											return false;
-										}
-									} else {
-										$semicolon = strpos( $data, ';' );
-										$brace     = strpos( $data, '}' );
-										// Either ; or } must exist.
-										if ( false === $semicolon && false === $brace ) {
-											return false;
-										}
-										// But neither must be in the first X characters.
-										if ( false !== $semicolon && $semicolon < 3 ) {
-											return false;
-										}
-										if ( false !== $brace && $brace < 4 ) {
-											return false;
-										}
-									}
-									$token = $data[0];
-									switch ( $token ) {
-										case 's':
-											if ( $strict ) {
-												if ( '"' !== substr( $data, -2, 1 ) ) {
-													return false;
-												}
-											} elseif ( ! str_contains( $data, '"' ) ) {
-												return false;
-											}
-											// Or else fall through.
-										case 'a':
-										case 'O':
-										case 'E':
-											return (bool) preg_match( "/^{$token}:[0-9]+:/s", $data );
-										case 'b':
-										case 'i':
-										case 'd':
-											$end = $strict ? '$' : '';
-											return (bool) preg_match( "/^{$token}:[0-9.E+-]+;$end/", $data );
-									}
-									return false;
-								}
+                
                 
                 /* only unserialize when string is actually serialized */
                 $output_params = '';
-                if (is_serialized($xml_lines[0])) {
+                if ($this->is_serialized($xml_lines[0])) {
                   $output_params = @unserialize(trim($xml_lines[0]));
                 }                
 
